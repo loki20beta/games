@@ -28,6 +28,7 @@ import {
   Animated,
   Dimensions
 } from 'react-native';
+import BuildInfo from '../components/BuildInfo';
 
 /**
  * HomeScreen Component - Game Configuration Interface
@@ -424,6 +425,9 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
       </View>
+
+      {/* Build Information for Development */}
+      <BuildInfo />
     </View>
   );
 }

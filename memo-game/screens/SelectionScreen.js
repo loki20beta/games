@@ -36,6 +36,7 @@ import {
   PanResponder
 } from 'react-native';
 import { getAllEmojis } from '../data/emojiData';
+import BuildInfo from '../components/BuildInfo';
 
 /**
  * SelectionScreen Component - Custom Carousel Image Selection
@@ -60,6 +61,11 @@ export default function SelectionScreen({ route, navigation }) {
   const [availableEmojis, setAvailableEmojis] = useState(getAllEmojis());
   const [selectedEmojis, setSelectedEmojis] = useState([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isCarouselInitialized, setIsCarouselInitialized] = useState(false);
+
+  // Circular carousel configuration
+  const VISIBLE_ITEMS = 5; // Total items visible (center + 2 on each side)
+  const COPIES_COUNT = 3; // Number of times to repeat the emoji array (minimum 3 for infinite scroll)
 
   // Animation references
   const scrollViewRef = useRef(null);
@@ -70,7 +76,6 @@ export default function SelectionScreen({ route, navigation }) {
   // Constants for carousel behavior
   const ITEM_SIZE = 80; // Center item size
   const ITEM_SPACING = 20; // Space between items
-  const VISIBLE_ITEMS = 5; // Number of visible items
 
   // Listen for screen orientation changes
   useEffect(() => {
@@ -82,6 +87,22 @@ export default function SelectionScreen({ route, navigation }) {
     return () => subscription?.remove();
   }, []);
 
+  // Initialize carousel position to start from middle copy for infinite scroll
+  useEffect(() => {
+    if (!isCarouselInitialized && availableEmojis.length > 0 && scrollViewRef.current) {
+      const middleStartIndex = getMiddleCopyStartIndex();
+      const itemWidth = ITEM_SIZE + ITEM_SPACING;
+      const initialScrollPosition = middleStartIndex * itemWidth;
+
+      // Set initial scroll position after a small delay to ensure ScrollView is ready
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ x: initialScrollPosition, animated: false });
+        setCarouselIndex(middleStartIndex);
+        setIsCarouselInitialized(true);
+      }, 100);
+    }
+  }, [availableEmojis.length, isCarouselInitialized]);
+
   // Start flashing animation when selection is complete
   useEffect(() => {
     if (selectedEmojis.length === requiredImages) {
@@ -90,6 +111,60 @@ export default function SelectionScreen({ route, navigation }) {
       stopFlashAnimation();
     }
   }, [selectedEmojis.length, requiredImages]);
+
+  /**
+   * Create circular carousel data for infinite scrolling
+   * Creates exactly COPIES_COUNT copies of the emoji array
+   *
+   * @returns {Array} Extended array with repeated items for circular scrolling
+   */
+  const createCircularCarouselData = () => {
+    if (availableEmojis.length === 0) return [];
+
+    const circularArray = [];
+    for (let copy = 0; copy < COPIES_COUNT; copy++) {
+      circularArray.push(...availableEmojis);
+    }
+
+    return circularArray;
+  };
+
+  /**
+   * Get the middle copy index - where we want to "center" the infinite scroll
+   * @returns {number} Starting index of the middle copy
+   */
+  const getMiddleCopyStartIndex = () => {
+    return availableEmojis.length; // Second copy (index 1) is the "middle"
+  };
+
+  /**
+   * Check if scroll position needs repositioning for infinite scroll
+   * @param {number} scrollX - Current scroll position
+   * @returns {number|null} New scroll position if repositioning needed, null otherwise
+   */
+  const getRepositionedScrollX = (scrollX) => {
+    const itemWidth = ITEM_SIZE + ITEM_SPACING;
+    const currentIndex = Math.round(scrollX / itemWidth);
+
+    const firstCopyEnd = availableEmojis.length; // End of first copy
+    const secondCopyStart = availableEmojis.length; // Start of middle copy
+    const secondCopyEnd = availableEmojis.length * 2; // End of middle copy
+    const buffer = Math.ceil(availableEmojis.length / 4); // Buffer zone
+
+    // If we're too far left (in first copy), jump to equivalent position in middle copy
+    if (currentIndex < buffer) {
+      const equivalentMiddleIndex = currentIndex + availableEmojis.length;
+      return equivalentMiddleIndex * itemWidth;
+    }
+
+    // If we're too far right (in last copy), jump to equivalent position in middle copy
+    if (currentIndex >= secondCopyEnd - buffer) {
+      const equivalentMiddleIndex = currentIndex - availableEmojis.length;
+      return equivalentMiddleIndex * itemWidth;
+    }
+
+    return null;
+  };
 
   /**
    * Start flashing animation for Next button
@@ -164,11 +239,14 @@ export default function SelectionScreen({ route, navigation }) {
    * Animates item from carousel to selection area and removes from available items
    *
    * @param {Object} emoji - Emoji object to select
-   * @param {number} index - Index of emoji in available array
+   * @param {number} circularIndex - Index of emoji in circular array
    */
-  const handleEmojiSelect = (emoji, index) => {
+  const handleEmojiSelect = (emoji, circularIndex) => {
     // Prevent selection if already at limit
     if (selectedEmojis.length >= requiredImages) return;
+
+    // Check if emoji is already selected
+    if (selectedEmojis.find(selected => selected.id === emoji.id)) return;
 
     // Create selection animation
     const animValue = new Animated.Value(0);
@@ -186,6 +264,9 @@ export default function SelectionScreen({ route, navigation }) {
       setSelectedEmojis(prev => [...prev, emoji]);
       setAvailableEmojis(prev => prev.filter(item => item.id !== emoji.id));
       selectionAnimations.delete(emoji.id);
+
+      // Reset carousel initialization to handle the updated available emojis
+      setIsCarouselInitialized(false);
     }, 150); // Halfway through animation
   };
 
@@ -200,21 +281,48 @@ export default function SelectionScreen({ route, navigation }) {
     // Remove from selected and return to available
     setSelectedEmojis(prev => prev.filter(item => item.id !== emoji.id));
     setAvailableEmojis(prev => [...prev, emoji].sort((a, b) => a.id - b.id));
+
+    // Reset carousel initialization to handle the updated available emojis
+    setIsCarouselInitialized(false);
   };
 
   /**
-   * Handle carousel scroll to update center index
-   * Enables dynamic scaling based on scroll position
-   *
+   * Handle carousel scroll to update center index and implement infinite scroll
    * @param {Object} event - Scroll event object
    */
   const handleScroll = (event) => {
+    if (!isCarouselInitialized) return;
+
     const scrollX = event.nativeEvent.contentOffset.x;
     const itemWidth = ITEM_SIZE + ITEM_SPACING;
     const newIndex = Math.round(scrollX / itemWidth);
 
-    if (newIndex !== carouselIndex && newIndex >= 0 && newIndex < availableEmojis.length) {
+    const circularData = createCircularCarouselData();
+    if (newIndex !== carouselIndex && newIndex >= 0 && newIndex < circularData.length) {
       setCarouselIndex(newIndex);
+    }
+  };
+
+  /**
+   * Handle scroll end to reposition for infinite scroll
+   * This is called when user stops scrolling
+   */
+  const handleScrollEnd = (event) => {
+    if (!isCarouselInitialized) return;
+
+    const scrollX = event.nativeEvent.contentOffset.x;
+    const repositionX = getRepositionedScrollX(scrollX);
+
+    if (repositionX !== null) {
+      // Add a small delay to ensure scroll has fully stopped
+      setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ x: repositionX, animated: false });
+          const itemWidth = ITEM_SIZE + ITEM_SPACING;
+          const newIndex = Math.round(repositionX / itemWidth);
+          setCarouselIndex(newIndex);
+        }
+      }, 100);
     }
   };
 
@@ -234,28 +342,36 @@ export default function SelectionScreen({ route, navigation }) {
    * Render individual carousel item with dynamic scaling and touch handling
    *
    * @param {Object} emoji - Emoji data object
-   * @param {number} index - Item index in carousel
+   * @param {number} circularIndex - Item index in circular carousel
    * @returns {JSX.Element} Rendered carousel item
    */
-  const renderCarouselItem = (emoji, index) => {
-    const scale = getScaleFactor(index, carouselIndex);
-    const opacity = getOpacity(index, carouselIndex);
+  const renderCarouselItem = (emoji, circularIndex) => {
+    if (!emoji) return null;
+
+    const scale = getScaleFactor(circularIndex, carouselIndex);
+    const opacity = getOpacity(circularIndex, carouselIndex);
     const size = ITEM_SIZE * scale;
+
+    // Check if this emoji is already selected (compare by original emoji, not circular position)
+    const originalEmojiIndex = circularIndex % availableEmojis.length;
+    const originalEmoji = availableEmojis[originalEmojiIndex];
+    const isSelected = selectedEmojis.find(selected => selected.id === originalEmoji?.id);
 
     return (
       <TouchableOpacity
-        key={emoji.id}
+        key={`emoji-${circularIndex}`} // Unique key for circular rendering
         style={[
           styles.carouselItem,
           {
             width: size,
             height: size,
             marginHorizontal: ITEM_SPACING / 2,
-            opacity: opacity,
+            opacity: isSelected ? 0.3 : opacity, // Dim selected items
           }
         ]}
-        onPress={() => handleEmojiSelect(emoji, index)}
+        onPress={() => handleEmojiSelect(originalEmoji, circularIndex)}
         activeOpacity={0.7}
+        disabled={isSelected} // Disable if already selected
       >
         <Text
           style={[
@@ -337,12 +453,17 @@ export default function SelectionScreen({ route, navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.carouselContent}
           onScroll={handleScroll}
+          onMomentumScrollEnd={handleScrollEnd}
+          onScrollEndDrag={handleScrollEnd}
           scrollEventThrottle={16}
           snapToInterval={ITEM_SIZE + ITEM_SPACING}
           decelerationRate="fast"
           bounces={false}
+          overScrollMode="never"
         >
-          {availableEmojis.map((emoji, index) => renderCarouselItem(emoji, index))}
+          {createCircularCarouselData().map((emoji, circularIndex) =>
+            renderCarouselItem(emoji, circularIndex)
+          )}
         </ScrollView>
       </View>
 
@@ -379,6 +500,9 @@ export default function SelectionScreen({ route, navigation }) {
           </TouchableOpacity>
         </Animated.View>
       </View>
+
+      {/* Build Information for Development */}
+      <BuildInfo />
     </View>
   );
 }
@@ -499,10 +623,10 @@ const styles = StyleSheet.create({
 
   /**
    * carouselContent: ScrollView content container
-   * Centers carousel items and provides appropriate padding
+   * Centers carousel items and provides appropriate padding for circular scrolling
    */
   carouselContent: {
-    paddingHorizontal: 100, // Centering offset
+    paddingHorizontal: 50, // Reduced padding for circular layout
     alignItems: 'center',
   },
 

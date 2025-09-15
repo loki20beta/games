@@ -35,6 +35,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import BuildInfo from '../components/BuildInfo';
 
 /**
  * GameScreen Component - Main Memory Game Interface
@@ -70,6 +71,9 @@ export default function GameScreen({ route, navigation }) {
       {/* TODO: Implement card grid layout */}
       {/* TODO: Implement game controls */}
       {/* TODO: Implement win screen modal */}
+
+      {/* Build Information for Development */}
+      <BuildInfo />
     </View>
   );
 }
