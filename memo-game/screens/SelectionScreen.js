@@ -73,9 +73,39 @@ export default function SelectionScreen({ route, navigation }) {
   const selectionAnimations = useRef(new Map()).current;
   const flashAnim = useRef(new Animated.Value(1)).current;
 
-  // Constants for carousel behavior
-  const ITEM_SIZE = 120; // Fixed item size for all emojis
-  const ITEM_SPACING = 20; // Space between items
+  // Dynamic carousel sizing based on screen dimensions and orientation
+  const getCarouselDimensions = () => {
+    const screenWidth = screenData.width;
+    const screenHeight = screenData.height;
+    const availableHeight = screenHeight - 200; // Account for selection area and navigation
+
+    // Calculate optimal item size based on orientation
+    let itemSize;
+    if (isLandscape) {
+      // In landscape, prioritize width but limit height
+      itemSize = Math.min(
+        Math.floor((screenWidth - 120) / 5), // 5 items visible with margins
+        Math.floor(availableHeight * 0.7)    // 70% of available height
+      );
+    } else {
+      // In portrait, use more of the available height
+      itemSize = Math.min(
+        Math.floor((screenWidth - 100) / 3.5), // 3.5 items visible
+        Math.floor(availableHeight * 0.8)      // 80% of available height
+      );
+    }
+
+    // Ensure minimum and maximum sizes
+    itemSize = Math.max(80, Math.min(itemSize, 150));
+
+    return {
+      itemSize,
+      itemSpacing: Math.floor(itemSize * 0.15), // 15% of item size
+      emojiSize: Math.floor(itemSize * 0.5)     // 50% of item size
+    };
+  };
+
+  const { itemSize, itemSpacing, emojiSize } = getCarouselDimensions();
 
   // Listen for screen orientation changes
   useEffect(() => {
@@ -91,7 +121,7 @@ export default function SelectionScreen({ route, navigation }) {
   useEffect(() => {
     if (!isCarouselInitialized && availableEmojis.length > 0 && scrollViewRef.current) {
       const middleStartIndex = getMiddleCopyStartIndex();
-      const itemWidth = ITEM_SIZE + ITEM_SPACING;
+      const itemWidth = itemSize + itemSpacing;
       const initialScrollPosition = middleStartIndex * itemWidth;
 
       // Set initial scroll position after a small delay to ensure ScrollView is ready
@@ -143,7 +173,7 @@ export default function SelectionScreen({ route, navigation }) {
  * @returns {number|null} New scroll position if repositioning needed, null otherwise
  */
 const getRepositionedScrollX = (scrollX) => {
-  const itemWidth = ITEM_SIZE + ITEM_SPACING;
+  const itemWidth = itemSize + itemSpacing;
   const currentIndex = Math.round(scrollX / itemWidth);
   const arrayLength = availableEmojis.length;
   const buffer = 5; // Simple fixed buffer
@@ -263,7 +293,7 @@ const getRepositionedScrollX = (scrollX) => {
     if (!isCarouselInitialized) return;
 
     const scrollX = event.nativeEvent.contentOffset.x;
-    const itemWidth = ITEM_SIZE + ITEM_SPACING;
+    const itemWidth = itemSize + itemSpacing;
     const newIndex = Math.round(scrollX / itemWidth);
 
     const circularData = createCircularCarouselData();
@@ -287,7 +317,7 @@ const getRepositionedScrollX = (scrollX) => {
       setTimeout(() => {
         if (scrollViewRef.current) {
           scrollViewRef.current.scrollTo({ x: repositionX, animated: false });
-          const itemWidth = ITEM_SIZE + ITEM_SPACING;
+          const itemWidth = itemSize + itemSpacing;
           const newIndex = Math.round(repositionX / itemWidth);
           setCarouselIndex(newIndex);
         }
@@ -328,6 +358,9 @@ const getRepositionedScrollX = (scrollX) => {
         style={[
           styles.carouselItem,
           {
+            width: itemSize,
+            height: itemSize,
+            marginHorizontal: itemSpacing / 2,
             opacity: isSelected ? 0.3 : 1.0, // Dim selected items, full opacity for others
           }
         ]}
@@ -335,7 +368,7 @@ const getRepositionedScrollX = (scrollX) => {
         activeOpacity={0.7}
         disabled={isSelected} // Disable if already selected
       >
-        <Text style={styles.carouselEmoji}>
+        <Text style={[styles.carouselEmoji, { fontSize: emojiSize }]}>
           {emoji.emoji}
         </Text>
       </TouchableOpacity>
@@ -376,9 +409,6 @@ const getRepositionedScrollX = (scrollX) => {
 
     return (
       <View style={styles.selectionArea}>
-        <Text style={styles.selectionTitle}>
-          Select {requiredImages} Images ({selectedEmojis.length}/{requiredImages})
-        </Text>
         <View
           style={[
             styles.selectionGrid,
@@ -409,7 +439,7 @@ const getRepositionedScrollX = (scrollX) => {
           onMomentumScrollEnd={handleScrollEnd}
           onScrollEndDrag={handleScrollEnd}
           scrollEventThrottle={16}
-          snapToInterval={ITEM_SIZE + ITEM_SPACING}
+          snapToInterval={itemSize + itemSpacing}
           decelerationRate="fast"
           bounces={false}
           overScrollMode="never"
@@ -430,9 +460,6 @@ const getRepositionedScrollX = (scrollX) => {
         </TouchableOpacity>
 
         <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            {requiredImages - selectedEmojis.length} more needed
-          </Text>
         </View>
 
         <Animated.View style={[styles.nextButtonContainer, { opacity: flashAnim }]}>
@@ -497,17 +524,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  /**
-   * selectionTitle: Progress indicator for selection process
-   * Shows current progress and required number of selections
-   */
-  selectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
 
   /**
    * selectionGrid: Container for selection slots
@@ -585,11 +601,10 @@ const styles = StyleSheet.create({
 
   /**
    * carouselItem: Individual carousel item container
-   * Equal sizing for all items with touch-friendly design
+   * Dynamic sizing based on screen dimensions and orientation
    */
   carouselItem: {
-    width: 120,  // Fixed width for all items
-    height: 120, // Fixed height for all items
+    // width and height are now set dynamically in component
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
@@ -601,15 +616,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
-    marginHorizontal: 10, // Consistent spacing between items
+    // marginHorizontal is now set dynamically in component
   },
 
   /**
    * carouselEmoji: Emoji display within carousel items
-   * Fixed sizing with proper rendering properties for all items
+   * Dynamic sizing based on screen dimensions and orientation
    */
   carouselEmoji: {
-    fontSize: 60, // Large, fixed size for all emojis
+    // fontSize is now set dynamically in component
     includeFontPadding: false,
     textAlignVertical: 'center',
     textAlign: 'center',
@@ -661,24 +676,13 @@ const styles = StyleSheet.create({
   },
 
   /**
-   * progressContainer: Container for progress text
-   * Flexible layout to accommodate varying text lengths
+   * progressContainer: Empty container for layout spacing
+   * Maintains navigation button alignment without text labels
    */
   progressContainer: {
     flex: 1,
     marginLeft: 15,
     justifyContent: 'center',
-  },
-
-  /**
-   * progressText: Progress indicator text
-   * Clear feedback on selection progress and next steps
-   */
-  progressText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    textAlign: 'center',
   },
 
   /**
