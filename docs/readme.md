@@ -1,24 +1,26 @@
 
-🧠 Memo Cards Game – Agent Setup README
+🧠 Kids Memo Cards Game – Agent Setup README
 
-This document outlines the goals, features, and starting plan for building a Memo Card Game using React Native + Expo. It’s written for an autonomous coding agent or AI assistant.
+This document outlines the goals, features, and starting plan for building a kid-friendly Memo Card Game using React Native + Expo. Designed specifically for children ages 3 and up.
 
 ⸻
 
 🎯 Goal
 
-Create a simple, visually engaging memory matching game with a customisable setup and swipe-based image selection.
+Create a simple, colorful, and engaging memory matching game designed for young children (3+ years) with step-by-step setup, big buttons, and visual learning elements.
 
 ⸻
 
-🧩 Key Features
-	1.	Customizable Field Size
-	•	User chooses number of cards (e.g. 2x2, 4x4, 6x6).
-	2.	Image Source Choice
-	•	User selects between:
-	•	Emojis (default emoji set)
-	•	Gallery photos (via image picker)
-	3.	Swipe-Based Selection
+🧩 Key Features (Kid-Friendly Design)
+	1.	Step-by-Step Setup
+	•	First: Choose grid size with visual representations (Small, Medium, Big)
+	•	Then: Choose between colorful emojis or family photos
+	•	Big, colorful buttons that are easy for small fingers
+	2.	Visual Grid Size Selection
+	•	Buttons show actual grid layout visually
+	•	Simple names: Small (2x2), Medium (4x4), Big (6x6)
+	•	Flashing "Next" button when selection is made
+	3.	Child-Friendly Image Selection
 	•	After choosing image source, a carousel or horizontal swipe view appears:
 	•	Shows available emojis or gallery images.
 	•	User swipes left/right to browse.

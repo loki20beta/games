@@ -1,21 +1,22 @@
-# 🎮 Games Collection
+# 🎮 Kids Games Collection
 
-A collection of interactive games built with modern web and mobile technologies.
+A collection of fun, educational games designed for children ages 3 and up, built with modern web and mobile technologies.
 
 ## 🎯 Overview
 
-This repository contains multiple game projects, each designed as standalone applications that can be played on various platforms.
+This repository contains multiple kid-friendly game projects, each designed as simple, colorful applications perfect for young children to learn and play.
 
 ## 🎲 Games
 
 ### 🧠 Memo Cards Game
-*Status: In Development*
+*Status: In Development* | **Ages: 3+**
 
-A memory matching game built with React Native + Expo featuring:
-- Customizable grid sizes (2x2, 4x4, 6x6)
-- Multiple image sources (emojis, gallery photos)
-- Swipe-based image selection
-- Smooth animations and satisfying interactions
+A fun memory matching game for young children built with React Native + Expo featuring:
+- Simple grid sizes: Small (2x2), Medium (4x4), Big (6x6)
+- Colorful emojis or personal photos
+- Easy step-by-step setup
+- Big buttons and bright animations perfect for little fingers
+- Visual learning through pattern recognition
 
 **Location**: `memo-game/`
 **Tech Stack**: React Native, Expo SDK, React Navigation
@@ -53,6 +54,19 @@ Games in this collection target multiple platforms:
 - 📱 Mobile (iOS/Android via React Native)
 - 🌐 Web (Progressive Web Apps)
 - 🖥 Desktop (Electron - future consideration)
+
+## 📝 Code Standards
+
+**Heavy Commenting Requirement**: All code in this project must be extensively commented to ensure maintainability and learning value for young developers:
+
+- **Every function**: Document what it does, parameters, return values, and its role in the application
+- **Every variable**: Explain what data it stores and why it's needed
+- **Every file/module**: Header comment explaining the file's purpose and its relationship to other modules
+- **Complex logic**: Step-by-step explanations of algorithms, state management, and user interactions
+- **Component structure**: Explain the UI hierarchy, styling decisions, and responsive behavior
+- **Business logic**: Document game rules, user flows, and data transformations
+
+The goal is to make the codebase educational and accessible to developers learning React Native, game development, and child-friendly UI design.
 
 ## 🤝 Contributing
 
