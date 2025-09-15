@@ -20,6 +20,11 @@
  * - Optimized for carousel rendering
  * - Support for async image loading
  * - Built-in thumbnail generation for gallery images
+ *
+ * TODO: Gallery Performance Optimization
+ * - Currently limited to 100 recent photos to prevent memory crashes
+ * - Future: Implement pagination/lazy loading for large galleries
+ * - Future: Add image caching and optimization
  */
 
 import * as ImagePicker from 'expo-image-picker';
@@ -52,17 +57,18 @@ export const getUniversalEmojis = () => {
 };
 
 /**
- * Request gallery permissions and pick multiple images
- * @param {number} maxImages - Maximum number of images to select
- * @returns {Promise<UniversalImageItem[]>} Array of selected images in universal format
+ * Pick gallery images using ImagePicker - user selects photos to browse in carousel
+ * This approach works because ImagePicker provides proper file:// URIs
+ * @param {number} maxImages - Maximum number of images to select (default 20)
+ * @returns {Promise<UniversalImageItem[]>} Array of selected gallery images in universal format
  */
-export const pickGalleryImages = async (maxImages = 50) => {
+export const loadGalleryImages = async (maxImages = 20) => {
   try {
     // Request media library permissions
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== 'granted') {
-      throw new Error('Gallery permission is required to select photos');
+      throw new Error('Gallery permission is required to select photos for the game');
     }
 
     // Launch image picker with multiple selection
@@ -71,27 +77,34 @@ export const pickGalleryImages = async (maxImages = 50) => {
       allowsMultipleSelection: true,
       allowsEditing: false,
       quality: 0.8,
-      // Limit selection count to prevent memory issues
       orderedSelection: true,
       selectionLimit: maxImages,
     });
 
     if (result.canceled || !result.assets) {
-      return [];
+      // If user cancels, return empty array (will trigger error handling)
+      throw new Error('Please select some photos to continue');
     }
 
     // Convert selected images to universal format
-    return result.assets.map((asset, index) => ({
+    const validAssets = result.assets.map((asset, index) => ({
       id: `gallery_${Date.now()}_${index}`,
       type: 'gallery',
-      displayContent: asset.uri,
+      displayContent: asset.uri, // ImagePicker provides proper file:// URIs
       name: asset.fileName || `Photo ${index + 1}`,
       category: 'gallery',
-      thumbnail: asset.uri, // Use same URI for now, can optimize later
+      thumbnail: asset.uri,
+      width: asset.width,
+      height: asset.height,
     }));
 
+    console.log(`User selected ${validAssets.length} gallery images for carousel`);
+    console.log(`First image URI: ${validAssets[0]?.displayContent}`);
+
+    return validAssets;
+
   } catch (error) {
-    console.error('Error picking gallery images:', error);
+    console.error('Error selecting gallery images:', error);
     throw error;
   }
 };
@@ -131,16 +144,16 @@ export const getAssetImages = (assetSet) => {
 /**
  * Get images based on source type from HomeScreen selection
  * @param {string} imageSource - Source type ('emoji' | 'gallery' | 'peppa' | 'bluey')
- * @param {number} [maxGalleryImages] - Max gallery images to pick
+ * @param {number} [maxGalleryImages] - Max gallery images to select (default 20)
  * @returns {Promise<UniversalImageItem[]>} Array of images in universal format
  */
-export const getImagesBySource = async (imageSource, maxGalleryImages = 50) => {
+export const getImagesBySource = async (imageSource, maxGalleryImages = 20) => {
   switch (imageSource) {
     case 'emoji':
       return getUniversalEmojis();
 
     case 'gallery':
-      return await pickGalleryImages(maxGalleryImages);
+      return await loadGalleryImages(maxGalleryImages);
 
     case 'peppa':
       return getAssetImages('peppa');
@@ -177,6 +190,7 @@ export const getDisplayProps = (imageItem) => {
       }
     };
   } else {
+    // For gallery images, ImagePicker provides proper file:// URIs
     return {
       component: 'Image',
       props: {

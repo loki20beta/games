@@ -126,7 +126,7 @@ export default function SelectionScreen({ route, navigation }) {
         Alert.alert(
           'Unable to Load Images',
           error.message.includes('permission')
-            ? 'Please allow access to your photos to select gallery images.'
+            ? 'Please allow access to your photos to browse your gallery.'
             : 'There was a problem loading the images. Please try again.',
           [
             {
@@ -499,7 +499,7 @@ const getRepositionedScrollX = (scrollX) => {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <Text style={styles.loadingText}>
-          {imageSource === 'gallery' ? 'Loading your photos...' : 'Loading images...'}
+          {imageSource === 'gallery' ? 'Loading your photo gallery...' : 'Loading images...'}
         </Text>
         <BuildInfo />
       </View>
