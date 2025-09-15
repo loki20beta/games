@@ -33,9 +33,11 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  PanResponder
+  PanResponder,
+  Image,
+  Alert
 } from 'react-native';
-import { getAllEmojis } from '../data/emojiData';
+import { getImagesBySource, getDisplayProps, requiresAsyncLoading } from '../data/imageData';
 import BuildInfo from '../components/BuildInfo';
 
 /**
@@ -57,11 +59,12 @@ export default function SelectionScreen({ route, navigation }) {
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const isLandscape = screenData.width > screenData.height;
 
-  // Carousel state management
-  const [availableEmojis, setAvailableEmojis] = useState(getAllEmojis());
-  const [selectedEmojis, setSelectedEmojis] = useState([]);
+  // Universal carousel state management
+  const [availableImages, setAvailableImages] = useState([]);
+  const [selectedImages, setSelectedImages] = useState([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isCarouselInitialized, setIsCarouselInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Circular carousel configuration
   const VISIBLE_ITEMS = 5; // Total items visible (center + 2 on each side)
@@ -107,6 +110,42 @@ export default function SelectionScreen({ route, navigation }) {
 
   const { itemSize, itemSpacing, emojiSize } = getCarouselDimensions();
 
+  // Load images based on source type when component mounts
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        setIsLoading(true);
+        const images = await getImagesBySource(imageSource);
+        setAvailableImages(images);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading images:', error);
+        setIsLoading(false);
+
+        // Show user-friendly error message
+        Alert.alert(
+          'Unable to Load Images',
+          error.message.includes('permission')
+            ? 'Please allow access to your photos to select gallery images.'
+            : 'There was a problem loading the images. Please try again.',
+          [
+            {
+              text: 'Go Back',
+              onPress: () => navigation.goBack(),
+              style: 'cancel'
+            },
+            {
+              text: 'Try Again',
+              onPress: () => loadImages()
+            }
+          ]
+        );
+      }
+    };
+
+    loadImages();
+  }, [imageSource]);
+
   // Listen for screen orientation changes
   useEffect(() => {
     const onChange = (result) => {
@@ -119,7 +158,7 @@ export default function SelectionScreen({ route, navigation }) {
 
   // Initialize carousel position to start from middle copy for infinite scroll
   useEffect(() => {
-    if (!isCarouselInitialized && availableEmojis.length > 0 && scrollViewRef.current) {
+    if (!isCarouselInitialized && availableImages.length > 0 && scrollViewRef.current && !isLoading) {
       const middleStartIndex = getMiddleCopyStartIndex();
       const itemWidth = itemSize + itemSpacing;
       const initialScrollPosition = middleStartIndex * itemWidth;
@@ -131,29 +170,29 @@ export default function SelectionScreen({ route, navigation }) {
         setIsCarouselInitialized(true);
       }, 100);
     }
-  }, [availableEmojis.length, isCarouselInitialized]);
+  }, [availableImages.length, isCarouselInitialized, isLoading]);
 
   // Start flashing animation when selection is complete
   useEffect(() => {
-    if (selectedEmojis.length === requiredImages) {
+    if (selectedImages.length === requiredImages) {
       startFlashAnimation();
     } else {
       stopFlashAnimation();
     }
-  }, [selectedEmojis.length, requiredImages]);
+  }, [selectedImages.length, requiredImages]);
 
   /**
    * Create circular carousel data for infinite scrolling
-   * Creates exactly COPIES_COUNT copies of the emoji array
+   * Creates exactly COPIES_COUNT copies of the image array
    *
    * @returns {Array} Extended array with repeated items for circular scrolling
    */
   const createCircularCarouselData = () => {
-    if (availableEmojis.length === 0) return [];
+    if (availableImages.length === 0) return [];
 
     const circularArray = [];
     for (let copy = 0; copy < COPIES_COUNT; copy++) {
-      circularArray.push(...availableEmojis);
+      circularArray.push(...availableImages);
     }
 
     return circularArray;
@@ -164,7 +203,7 @@ export default function SelectionScreen({ route, navigation }) {
    * @returns {number} Starting index of the middle copy
    */
   const getMiddleCopyStartIndex = () => {
-    return availableEmojis.length; // Second copy (index 1) is the "middle"
+    return availableImages.length; // Second copy (index 1) is the "middle"
   };
 
 /**
@@ -175,7 +214,7 @@ export default function SelectionScreen({ route, navigation }) {
 const getRepositionedScrollX = (scrollX) => {
   const itemWidth = itemSize + itemSpacing;
   const currentIndex = Math.round(scrollX / itemWidth);
-  const arrayLength = availableEmojis.length;
+  const arrayLength = availableImages.length;
   const buffer = 5; // Simple fixed buffer
 
   // Array structure: [copy1: 0 to arrayLength-1][copy2: arrayLength to 2*arrayLength-1][copy3: 2*arrayLength to 3*arrayLength-1]
@@ -220,12 +259,12 @@ const getRepositionedScrollX = (scrollX) => {
    * Only enabled when sufficient images are selected
    */
   const handleNext = () => {
-    if (selectedEmojis.length === requiredImages) {
+    if (selectedImages.length === requiredImages) {
       stopFlashAnimation();
       navigation.navigate('Game', {
         gridSize,
         imageSource,
-        selectedEmojis,
+        selectedImages,
         totalCards
       });
     }
@@ -234,22 +273,22 @@ const getRepositionedScrollX = (scrollX) => {
   // Removed dynamic scaling functions - all emojis now equal size
 
   /**
-   * Handle emoji selection from carousel
+   * Handle image selection from carousel
    * Animates item from carousel to selection area and removes from available items
    *
-   * @param {Object} emoji - Emoji object to select
-   * @param {number} circularIndex - Index of emoji in circular array
+   * @param {Object} image - Image object to select
+   * @param {number} circularIndex - Index of image in circular array
    */
-  const handleEmojiSelect = (emoji, circularIndex) => {
+  const handleImageSelect = (image, circularIndex) => {
     // Prevent selection if already at limit
-    if (selectedEmojis.length >= requiredImages) return;
+    if (selectedImages.length >= requiredImages) return;
 
-    // Check if emoji is already selected
-    if (selectedEmojis.find(selected => selected.id === emoji.id)) return;
+    // Check if image is already selected
+    if (selectedImages.find(selected => selected.id === image.id)) return;
 
     // Create selection animation
     const animValue = new Animated.Value(0);
-    selectionAnimations.set(emoji.id, animValue);
+    selectionAnimations.set(image.id, animValue);
 
     // Animate selection transition
     Animated.timing(animValue, {
@@ -260,28 +299,28 @@ const getRepositionedScrollX = (scrollX) => {
 
     // Update state after animation starts
     setTimeout(() => {
-      setSelectedEmojis(prev => [...prev, emoji]);
-      setAvailableEmojis(prev => prev.filter(item => item.id !== emoji.id));
-      selectionAnimations.delete(emoji.id);
+      setSelectedImages(prev => [...prev, image]);
+      setAvailableImages(prev => prev.filter(item => item.id !== image.id));
+      selectionAnimations.delete(image.id);
 
-      // Reset carousel initialization to handle the updated available emojis
+      // Reset carousel initialization to handle the updated available images
       setIsCarouselInitialized(false);
     }, 150); // Halfway through animation
   };
 
   /**
-   * Handle emoji deselection from selection area
-   * Returns emoji to carousel and removes from selected items
+   * Handle image deselection from selection area
+   * Returns image to carousel and removes from selected items
    *
-   * @param {Object} emoji - Emoji object to deselect
-   * @param {number} index - Index of emoji in selected array
+   * @param {Object} image - Image object to deselect
+   * @param {number} index - Index of image in selected array
    */
-  const handleEmojiDeselect = (emoji, index) => {
+  const handleImageDeselect = (image, index) => {
     // Remove from selected and return to available
-    setSelectedEmojis(prev => prev.filter(item => item.id !== emoji.id));
-    setAvailableEmojis(prev => [...prev, emoji].sort((a, b) => a.id - b.id));
+    setSelectedImages(prev => prev.filter(item => item.id !== image.id));
+    setAvailableImages(prev => [...prev, image].sort((a, b) => a.id.localeCompare(b.id)));
 
-    // Reset carousel initialization to handle the updated available emojis
+    // Reset carousel initialization to handle the updated available images
     setIsCarouselInitialized(false);
   };
 
@@ -338,23 +377,26 @@ const getRepositionedScrollX = (scrollX) => {
   };
 
   /**
-   * Render individual carousel item with equal sizing and touch handling
+   * Render individual carousel item with universal image support
    *
-   * @param {Object} emoji - Emoji data object
+   * @param {Object} image - Universal image data object
    * @param {number} circularIndex - Item index in circular carousel
    * @returns {JSX.Element} Rendered carousel item
    */
-  const renderCarouselItem = (emoji, circularIndex) => {
-    if (!emoji) return null;
+  const renderCarouselItem = (image, circularIndex) => {
+    if (!image) return null;
 
-    // Check if this emoji is already selected (compare by original emoji, not circular position)
-    const originalEmojiIndex = circularIndex % availableEmojis.length;
-    const originalEmoji = availableEmojis[originalEmojiIndex];
-    const isSelected = selectedEmojis.find(selected => selected.id === originalEmoji?.id);
+    // Check if this image is already selected (compare by original image, not circular position)
+    const originalImageIndex = circularIndex % availableImages.length;
+    const originalImage = availableImages[originalImageIndex];
+    const isSelected = selectedImages.find(selected => selected.id === originalImage?.id);
+
+    // Get display props based on image type
+    const displayProps = getDisplayProps(image);
 
     return (
       <TouchableOpacity
-        key={`emoji-${circularIndex}`} // Unique key for circular rendering
+        key={`image-${circularIndex}`} // Unique key for circular rendering
         style={[
           styles.carouselItem,
           {
@@ -364,19 +406,39 @@ const getRepositionedScrollX = (scrollX) => {
             opacity: isSelected ? 0.3 : 1.0, // Dim selected items, full opacity for others
           }
         ]}
-        onPress={() => handleEmojiSelect(originalEmoji, circularIndex)}
+        onPress={() => handleImageSelect(originalImage, circularIndex)}
         activeOpacity={0.7}
         disabled={isSelected} // Disable if already selected
       >
-        <Text style={[styles.carouselEmoji, { fontSize: emojiSize }]}>
-          {emoji.emoji}
-        </Text>
+        {displayProps.component === 'Text' ? (
+          <Text
+            style={[
+              styles.carouselEmoji,
+              { fontSize: emojiSize },
+              displayProps.props.style
+            ]}
+          >
+            {displayProps.props.children}
+          </Text>
+        ) : (
+          <Image
+            {...displayProps.props}
+            style={[
+              displayProps.props.style,
+              {
+                width: itemSize * 0.8, // Slightly smaller than container for padding
+                height: itemSize * 0.8,
+                borderRadius: 8,
+              }
+            ]}
+          />
+        )}
       </TouchableOpacity>
     );
   };
 
   /**
-   * Render selection area with selected emojis
+   * Render selection area with selected images
    * Creates grid layout matching game grid proportions
    *
    * @returns {JSX.Element} Selection area component
@@ -387,21 +449,30 @@ const getRepositionedScrollX = (scrollX) => {
 
     // Create slots for selected items
     for (let i = 0; i < layout.totalSlots; i++) {
-      const emoji = selectedEmojis[i];
+      const image = selectedImages[i];
       slots.push(
         <TouchableOpacity
           key={i}
           style={[
             styles.selectionSlot,
-            emoji ? styles.selectionSlotFilled : styles.selectionSlotEmpty
+            image ? styles.selectionSlotFilled : styles.selectionSlotEmpty
           ]}
-          onPress={emoji ? () => handleEmojiDeselect(emoji, i) : undefined}
-          activeOpacity={emoji ? 0.7 : 1}
+          onPress={image ? () => handleImageDeselect(image, i) : undefined}
+          activeOpacity={image ? 0.7 : 1}
         >
-          {emoji && (
-            <Text style={styles.selectionEmoji}>
-              {emoji.emoji}
-            </Text>
+          {image && (
+            <>
+              {image.type === 'emoji' ? (
+                <Text style={styles.selectionEmoji}>
+                  {image.displayContent}
+                </Text>
+              ) : (
+                <Image
+                  source={{ uri: image.displayContent }}
+                  style={styles.selectionImage}
+                />
+              )}
+            </>
           )}
         </TouchableOpacity>
       );
@@ -422,6 +493,18 @@ const getRepositionedScrollX = (scrollX) => {
       </View>
     );
   };
+
+  // Show loading state while images are being loaded
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>
+          {imageSource === 'gallery' ? 'Loading your photos...' : 'Loading images...'}
+        </Text>
+        <BuildInfo />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -444,8 +527,8 @@ const getRepositionedScrollX = (scrollX) => {
           bounces={false}
           overScrollMode="never"
         >
-          {createCircularCarouselData().map((emoji, circularIndex) =>
-            renderCarouselItem(emoji, circularIndex)
+          {createCircularCarouselData().map((image, circularIndex) =>
+            renderCarouselItem(image, circularIndex)
           )}
         </ScrollView>
       </View>
@@ -466,14 +549,14 @@ const getRepositionedScrollX = (scrollX) => {
           <TouchableOpacity
             style={[
               styles.nextButton,
-              selectedEmojis.length !== requiredImages && styles.nextButtonDisabled
+              selectedImages.length !== requiredImages && styles.nextButtonDisabled
             ]}
             onPress={handleNext}
-            disabled={selectedEmojis.length !== requiredImages}
+            disabled={selectedImages.length !== requiredImages}
           >
             <Text style={[
               styles.nextButtonText,
-              selectedEmojis.length !== requiredImages && styles.nextButtonTextDisabled
+              selectedImages.length !== requiredImages && styles.nextButtonTextDisabled
             ]}>
               ➡️
             </Text>
@@ -578,6 +661,17 @@ const styles = StyleSheet.create({
     fontSize: 28,
     includeFontPadding: false,
     textAlignVertical: 'center',
+  },
+
+  /**
+   * selectionImage: Image display within selection slots
+   * Optimized sizing for gallery photos and assets
+   */
+  selectionImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    resizeMode: 'cover',
   },
 
   /**
@@ -742,5 +836,22 @@ const styles = StyleSheet.create({
    */
   nextButtonTextDisabled: {
     color: '#adb5bd',
+  },
+
+  /**
+   * LOADING STATE STYLES
+   * Styles for loading screen while images are being fetched
+   */
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });
