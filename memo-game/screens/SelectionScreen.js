@@ -74,7 +74,7 @@ export default function SelectionScreen({ route, navigation }) {
   const flashAnim = useRef(new Animated.Value(1)).current;
 
   // Constants for carousel behavior
-  const ITEM_SIZE = 80; // Center item size
+  const ITEM_SIZE = 120; // Fixed item size for all emojis
   const ITEM_SPACING = 20; // Space between items
 
   // Listen for screen orientation changes
@@ -146,25 +146,21 @@ const getRepositionedScrollX = (scrollX) => {
   const itemWidth = ITEM_SIZE + ITEM_SPACING;
   const currentIndex = Math.round(scrollX / itemWidth);
   const arrayLength = availableEmojis.length;
-  const buffer = Math.ceil(arrayLength / 4); // Buffer zone
-  
-  // Assuming you have 3 copies: [copy1][copy2][copy3]
-  // copy1: indices 0 to arrayLength-1
-  // copy2: indices arrayLength to (2*arrayLength)-1  
-  // copy3: indices 2*arrayLength to (3*arrayLength)-1
-  
-  // If we're too far left (in first copy), jump to equivalent position in middle copy
+  const buffer = 5; // Simple fixed buffer
+
+  // Array structure: [copy1: 0 to arrayLength-1][copy2: arrayLength to 2*arrayLength-1][copy3: 2*arrayLength to 3*arrayLength-1]
+  // We want to keep the user in copy2 (middle copy) for seamless infinite scrolling
+
+  // If scrolling left into first copy (too close to start), jump to equivalent position in copy2
   if (currentIndex < buffer) {
-    const equivalentMiddleIndex = currentIndex + arrayLength;
-    return equivalentMiddleIndex * itemWidth;
+    return (currentIndex + arrayLength) * itemWidth;
   }
-  
-  // If we're too far right (in third copy), jump to equivalent position in middle copy
-  if (currentIndex >= (2 * arrayLength) + (arrayLength - buffer)) {
-    const equivalentMiddleIndex = currentIndex - arrayLength;
-    return equivalentMiddleIndex * itemWidth;
+
+  // If scrolling right into third copy (too close to end), jump to equivalent position in copy2
+  if (currentIndex >= (2 * arrayLength) - buffer) {
+    return (currentIndex - arrayLength) * itemWidth;
   }
-  
+
   return null;
 };
 
@@ -205,36 +201,7 @@ const getRepositionedScrollX = (scrollX) => {
     }
   };
 
-  /**
-   * Calculate scaling factor based on item position relative to center
-   * Implements 5-level scaling system from design specification
-   *
-   * @param {number} index - Item index in carousel
-   * @param {number} centerIndex - Current center item index
-   * @returns {number} Scale factor (0.25 to 1.0)
-   */
-  const getScaleFactor = (index, centerIndex) => {
-    const distance = Math.abs(index - centerIndex);
-    switch (distance) {
-      case 0: return 1.0;    // Center: 100%
-      case 1: return 0.75;   // Adjacent: 75%
-      case 2: return 0.5;    // Secondary: 50%
-      default: return 0.25;  // Peripheral: 25%
-    }
-  };
-
-  /**
-   * Calculate opacity for fade effect on peripheral items
-   * Enhances depth perception in carousel
-   *
-   * @param {number} index - Item index in carousel
-   * @param {number} centerIndex - Current center item index
-   * @returns {number} Opacity value (0.3 to 1.0)
-   */
-  const getOpacity = (index, centerIndex) => {
-    const distance = Math.abs(index - centerIndex);
-    return Math.max(0.3, 1 - (distance * 0.2));
-  };
+  // Removed dynamic scaling functions - all emojis now equal size
 
   /**
    * Handle emoji selection from carousel
@@ -341,7 +308,7 @@ const getRepositionedScrollX = (scrollX) => {
   };
 
   /**
-   * Render individual carousel item with dynamic scaling and touch handling
+   * Render individual carousel item with equal sizing and touch handling
    *
    * @param {Object} emoji - Emoji data object
    * @param {number} circularIndex - Item index in circular carousel
@@ -349,10 +316,6 @@ const getRepositionedScrollX = (scrollX) => {
    */
   const renderCarouselItem = (emoji, circularIndex) => {
     if (!emoji) return null;
-
-    const scale = getScaleFactor(circularIndex, carouselIndex);
-    const opacity = getOpacity(circularIndex, carouselIndex);
-    const size = ITEM_SIZE * scale;
 
     // Check if this emoji is already selected (compare by original emoji, not circular position)
     const originalEmojiIndex = circularIndex % availableEmojis.length;
@@ -365,26 +328,14 @@ const getRepositionedScrollX = (scrollX) => {
         style={[
           styles.carouselItem,
           {
-            width: size,
-            height: size,
-            marginHorizontal: ITEM_SPACING / 2,
-            opacity: isSelected ? 0.3 : opacity, // Dim selected items
+            opacity: isSelected ? 0.3 : 1.0, // Dim selected items, full opacity for others
           }
         ]}
         onPress={() => handleEmojiSelect(originalEmoji, circularIndex)}
         activeOpacity={0.7}
         disabled={isSelected} // Disable if already selected
       >
-        <Text
-          style={[
-            styles.carouselEmoji,
-            {
-              fontSize: size * 0.6, // Emoji size relative to container
-              includeFontPadding: false,
-              textAlignVertical: 'center',
-            }
-          ]}
-        >
+        <Text style={styles.carouselEmoji}>
           {emoji.emoji}
         </Text>
       </TouchableOpacity>
@@ -620,7 +571,7 @@ const styles = StyleSheet.create({
   carouselContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
 
   /**
@@ -634,9 +585,11 @@ const styles = StyleSheet.create({
 
   /**
    * carouselItem: Individual carousel item container
-   * Dynamic sizing based on position with touch-friendly design
+   * Equal sizing for all items with touch-friendly design
    */
   carouselItem: {
+    width: 120,  // Fixed width for all items
+    height: 120, // Fixed height for all items
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
@@ -648,13 +601,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
+    marginHorizontal: 10, // Consistent spacing between items
   },
 
   /**
    * carouselEmoji: Emoji display within carousel items
-   * Dynamic sizing with proper rendering properties
+   * Fixed sizing with proper rendering properties for all items
    */
   carouselEmoji: {
+    fontSize: 60, // Large, fixed size for all emojis
     includeFontPadding: false,
     textAlignVertical: 'center',
     textAlign: 'center',
