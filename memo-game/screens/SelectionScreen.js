@@ -137,34 +137,36 @@ export default function SelectionScreen({ route, navigation }) {
     return availableEmojis.length; // Second copy (index 1) is the "middle"
   };
 
-  /**
-   * Check if scroll position needs repositioning for infinite scroll
-   * @param {number} scrollX - Current scroll position
-   * @returns {number|null} New scroll position if repositioning needed, null otherwise
-   */
-  const getRepositionedScrollX = (scrollX) => {
-    const itemWidth = ITEM_SIZE + ITEM_SPACING;
-    const currentIndex = Math.round(scrollX / itemWidth);
-
-    const firstCopyEnd = availableEmojis.length; // End of first copy
-    const secondCopyStart = availableEmojis.length; // Start of middle copy
-    const secondCopyEnd = availableEmojis.length * 2; // End of middle copy
-    const buffer = Math.ceil(availableEmojis.length / 4); // Buffer zone
-
-    // If we're too far left (in first copy), jump to equivalent position in middle copy
-    if (currentIndex < buffer) {
-      const equivalentMiddleIndex = currentIndex + availableEmojis.length;
-      return equivalentMiddleIndex * itemWidth;
-    }
-
-    // If we're too far right (in last copy), jump to equivalent position in middle copy
-    if (currentIndex >= secondCopyEnd - buffer) {
-      const equivalentMiddleIndex = currentIndex - availableEmojis.length;
-      return equivalentMiddleIndex * itemWidth;
-    }
-
-    return null;
-  };
+/**
+ * Check if scroll position needs repositioning for infinite scroll
+ * @param {number} scrollX - Current scroll position
+ * @returns {number|null} New scroll position if repositioning needed, null otherwise
+ */
+const getRepositionedScrollX = (scrollX) => {
+  const itemWidth = ITEM_SIZE + ITEM_SPACING;
+  const currentIndex = Math.round(scrollX / itemWidth);
+  const arrayLength = availableEmojis.length;
+  const buffer = Math.ceil(arrayLength / 4); // Buffer zone
+  
+  // Assuming you have 3 copies: [copy1][copy2][copy3]
+  // copy1: indices 0 to arrayLength-1
+  // copy2: indices arrayLength to (2*arrayLength)-1  
+  // copy3: indices 2*arrayLength to (3*arrayLength)-1
+  
+  // If we're too far left (in first copy), jump to equivalent position in middle copy
+  if (currentIndex < buffer) {
+    const equivalentMiddleIndex = currentIndex + arrayLength;
+    return equivalentMiddleIndex * itemWidth;
+  }
+  
+  // If we're too far right (in third copy), jump to equivalent position in middle copy
+  if (currentIndex >= (2 * arrayLength) + (arrayLength - buffer)) {
+    const equivalentMiddleIndex = currentIndex - arrayLength;
+    return equivalentMiddleIndex * itemWidth;
+  }
+  
+  return null;
+};
 
   /**
    * Start flashing animation for Next button
