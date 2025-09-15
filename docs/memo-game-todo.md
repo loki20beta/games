@@ -24,14 +24,16 @@ Building a React Native + Expo memory matching game with customizable grid sizes
 
 ## ✅ TODO List
 
-### 🏗 Phase 1: Project Setup & Core Infrastructure
-- [ ] **P1.1** Initialize Expo React Native project in memo-game folder
-- [ ] **P1.2** Install core dependencies (react-navigation, gesture-handler, reanimated)
-- [ ] **P1.3** Install image picker dependency (expo-image-picker)
-- [ ] **P1.4** Set up navigation structure (Stack Navigator)
-- [ ] **P1.5** Create basic app shell with navigation
-- [ ] **P1.6** Set up project configuration files (app.json, babel.config.js)
-- [ ] **P1.7** Test basic app runs on simulator/device
+### 🏗 Phase 1: Project Setup & Core Infrastructure ✅ **COMPLETED 2025-09-15** | Commit: `63028fb`
+- [x] **P1.1** Initialize Expo React Native project in memo-game folder
+- [x] **P1.2** Install core dependencies (react-navigation, gesture-handler, reanimated)
+- [x] **P1.3** Install image picker dependency (expo-image-picker)
+- [x] **P1.4** Set up navigation structure (Stack Navigator)
+- [x] **P1.5** Create basic app shell with navigation
+- [x] **P1.6** Set up project configuration files (app.json, babel.config.js)
+- [x] **P1.7** Test basic app runs on simulator/device
+
+**Phase 1 Summary**: Successfully created Expo React Native project with full navigation setup (Home → Selection → Game screens), installed all required dependencies, and resolved babel-preset-expo configuration issue. App tested and confirmed working on Expo Go.
 
 ### 🏠 Phase 2: Home Screen Development
 - [ ] **P2.1** Create HomeScreen component structure
