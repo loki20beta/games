@@ -198,12 +198,6 @@ export default function GameScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Game Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Memory Game</Text>
-        <Text style={styles.gridInfo}>{gridSize} • {imageSource}</Text>
-      </View>
-
       {/* Game Board */}
       <View style={styles.gameBoard}>
         <View style={[styles.gameGrid, {
@@ -229,41 +223,6 @@ export default function GameScreen({ route, navigation }) {
               />
             </View>
           ))}
-        </View>
-      </View>
-
-      {/* Game Controls */}
-      <View style={styles.controls}>
-        <Text style={[styles.gameStatus, gameWon && styles.gameWonStatus]}>
-          {gameWon
-            ? '🎉 Congratulations! You won!'
-            : `${matchedPairs} of ${gameCards.length / 2} pairs matched`
-          }
-          {isProcessing && !gameWon && ' • Processing...'}
-        </Text>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.restartButton]}
-            onPress={handleRestart}
-          >
-            <Text style={styles.actionButtonText}>🔄 Restart</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.newGameButton]}
-            onPress={handleNewGame}
-          >
-            <Text style={styles.actionButtonText}>🖼️ New Images</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.homeButton]}
-            onPress={handleBackToHome}
-          >
-            <Text style={styles.actionButtonText}>🏠 Home</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -341,14 +300,12 @@ function calculateCardDimensions(screenDimensions, gridConfig) {
   const { width: screenWidth, height: screenHeight } = screenDimensions;
   const { rows, columns } = gridConfig;
 
-  // Reserve space for header, controls, and padding
-  const headerHeight = 80;
-  const controlsHeight = 120; // Increased to accommodate buttons
+  // Reserve space for build info and padding
   const buildInfoHeight = 40;
   const verticalPadding = 40;
 
   const availableWidth = screenWidth - 40; // 20px padding on each side
-  const availableHeight = screenHeight - headerHeight - controlsHeight - buildInfoHeight - verticalPadding;
+  const availableHeight = screenHeight - buildInfoHeight - verticalPadding;
 
   // Calculate card size based on available space
   const maxCardWidth = (availableWidth - (columns - 1) * 8) / columns; // 8px margin between cards
@@ -382,34 +339,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
 
-  /**
-   * header: Game screen header with title and configuration info
-   */
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    alignItems: 'center',
-    height: 80,
-  },
-
-  /**
-   * title: Main game title
-   */
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-
-  /**
-   * gridInfo: Shows current grid size and image source
-   */
-  gridInfo: {
-    fontSize: 14,
-    color: '#6c757d',
-    textTransform: 'capitalize',
-  },
 
   /**
    * gameBoard: Main game area container
@@ -439,88 +368,4 @@ const styles = StyleSheet.create({
   },
 
 
-  /**
-   * controls: Game controls and status area
-   */
-  controls: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-    height: 120,
-  },
-
-  /**
-   * gameStatus: Current game status text
-   */
-  gameStatus: {
-    fontSize: 14,
-    color: '#6c757d',
-    textAlign: 'center',
-  },
-
-  /**
-   * gameWonStatus: Special styling for win message
-   */
-  gameWonStatus: {
-    color: '#28a745',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-
-  /**
-   * actionButtons: Container for game action buttons
-   */
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 15,
-  },
-
-  /**
-   * actionButton: Base styling for action buttons
-   */
-  actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 5,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-
-  /**
-   * actionButtonText: Text styling for action buttons
-   */
-  actionButtonText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: 'white',
-  },
-
-  /**
-   * restartButton: Restart game button styling
-   */
-  restartButton: {
-    backgroundColor: '#17a2b8',
-  },
-
-  /**
-   * newGameButton: New game button styling
-   */
-  newGameButton: {
-    backgroundColor: '#28a745',
-  },
-
-  /**
-   * homeButton: Home button styling
-   */
-  homeButton: {
-    backgroundColor: '#6c757d',
-  },
 });

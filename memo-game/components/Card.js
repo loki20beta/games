@@ -115,8 +115,7 @@ export default function Card({ card, onPress, cardSize, disabled = false }) {
           ]}
         >
           <View style={styles.cardBackContent}>
-            <Text style={styles.cardBackIcon}>🧠</Text>
-            <Text style={styles.cardBackText}>Memory</Text>
+            {/* Clean card back with no symbols or text */}
           </View>
         </Animated.View>
 
@@ -207,23 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  /**
-   * cardBackIcon: Brain emoji icon for face-down cards
-   */
-  cardBackIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-
-  /**
-   * cardBackText: Text label for face-down cards
-   */
-  cardBackText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
 
   /**
    * cardFront: Face-up styling (shows selected image/emoji)
