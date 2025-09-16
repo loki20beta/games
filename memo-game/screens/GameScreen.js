@@ -218,7 +218,8 @@ export default function GameScreen({ route, navigation }) {
               <Card
                 card={card}
                 onPress={handleCardPress}
-                cardSize={cardDimensions.cardSize}
+                cardWidth={cardDimensions.cardWidth}
+                cardHeight={cardDimensions.cardHeight}
                 disabled={isProcessing}
               />
             </View>
@@ -292,6 +293,7 @@ function createGameCards(selectedImages, totalCards) {
 
 /**
  * Calculate responsive card dimensions based on screen size and grid configuration
+ * Cards will always occupy the whole available space, forming a square grid when possible
  * @param {Object} screenDimensions - Screen width and height
  * @param {Object} gridConfig - Grid configuration (rows, columns)
  * @returns {Object} Card sizing and spacing information
@@ -302,25 +304,26 @@ function calculateCardDimensions(screenDimensions, gridConfig) {
 
   // Reserve space for build info and padding
   const buildInfoHeight = 40;
-  const verticalPadding = 40;
+  const verticalPadding = 20; // Reduced padding for more space
 
-  const availableWidth = screenWidth - 40; // 20px padding on each side
+  const availableWidth = screenWidth - 20; // 10px padding on each side
   const availableHeight = screenHeight - buildInfoHeight - verticalPadding;
 
-  // Calculate card size based on available space
-  const maxCardWidth = (availableWidth - (columns - 1) * 8) / columns; // 8px margin between cards
-  const maxCardHeight = (availableHeight - (rows - 1) * 8) / rows;
+  // Calculate optimal card dimensions to fill the entire available space
+  // Use minimal margin between cards (2px) to maximize card size
+  const margin = 2;
+  
+  // Calculate card dimensions that fill the entire available space
+  const cardWidth = (availableWidth - (columns - 1) * margin) / columns;
+  const cardHeight = (availableHeight - (rows - 1) * margin) / rows;
 
-  // Use the smaller dimension to ensure cards are square and fit in both dimensions
-  const cardSize = Math.min(maxCardWidth, maxCardHeight, 120); // Max 120px for larger grids
-
-  // Calculate actual grid dimensions
-  const margin = 8;
-  const gridWidth = (cardSize * columns) + (margin * (columns - 1));
-  const gridHeight = (cardSize * rows) + (margin * (rows - 1));
+  // Calculate actual grid dimensions (should fill available space)
+  const gridWidth = availableWidth;
+  const gridHeight = availableHeight;
 
   return {
-    cardSize: Math.floor(cardSize),
+    cardWidth: Math.floor(cardWidth),
+    cardHeight: Math.floor(cardHeight),
     margin,
     gridWidth,
     gridHeight,
@@ -347,7 +350,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
   },
 
   /**

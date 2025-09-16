@@ -45,11 +45,12 @@ import { getDisplayProps } from '../data/imageData';
  * @param {Object} props - Component props
  * @param {Object} props.card - Card data object
  * @param {Function} props.onPress - Callback when card is pressed
- * @param {number} props.cardSize - Card dimensions
+ * @param {number} props.cardWidth - Card width
+ * @param {number} props.cardHeight - Card height
  * @param {boolean} props.disabled - Whether card interactions are disabled
  * @returns {JSX.Element} Animated memory card component
  */
-export default function Card({ card, onPress, cardSize, disabled = false }) {
+export default function Card({ card, onPress, cardWidth, cardHeight, disabled = false }) {
   // Animation value for flip effect (0 = face down, 1 = face up)
   const flipAnimation = useRef(new Animated.Value(card.isFlipped ? 1 : 0)).current;
 
@@ -89,8 +90,8 @@ export default function Card({ card, onPress, cardSize, disabled = false }) {
 
   // Calculate dynamic styles
   const cardContainerStyle = {
-    width: cardSize,
-    height: cardSize,
+    width: cardWidth,
+    height: cardHeight,
   };
 
   const dynamicCardStyle = {
@@ -129,7 +130,7 @@ export default function Card({ card, onPress, cardSize, disabled = false }) {
         >
           <View style={styles.cardFrontContent}>
             {displayProps.component === 'Text' ? (
-              <Text style={[styles.cardEmoji, { fontSize: cardSize * 0.4 }]}>
+              <Text style={[styles.cardEmoji, { fontSize: Math.min(cardWidth, cardHeight) * 0.4 }]}>
                 {displayProps.props.children}
               </Text>
             ) : (
@@ -138,8 +139,8 @@ export default function Card({ card, onPress, cardSize, disabled = false }) {
                 style={[
                   styles.cardImage,
                   {
-                    width: cardSize - 8,
-                    height: cardSize - 8,
+                    width: cardWidth - 8,
+                    height: cardHeight - 8,
                   }
                 ]}
                 resizeMode="cover"
