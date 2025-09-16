@@ -21,7 +21,8 @@
  * Props Expected:
  * - card: Card data object with image, states, and IDs
  * - onPress: Callback function when card is tapped
- * - cardSize: Dynamic size for responsive layout
+ * - cardWidth: Card width for responsive layout
+ * - cardHeight: Card height for responsive layout
  * - disabled: Boolean to prevent interactions during animations
  */
 

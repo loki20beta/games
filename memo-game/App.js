@@ -28,6 +28,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Import screen components
 import HomeScreen from './screens/HomeScreen';
@@ -56,20 +57,21 @@ const Stack = createStackNavigator();
  */
 export default function App() {
   return (
-    <NavigationContainer>
-      {/*
-        StatusBar configuration
-        - 'auto': Automatically adjusts based on app theme
-        - Ensures consistent status bar appearance across platforms
-      */}
-      <StatusBar style="auto" />
+    <SafeAreaProvider>
+      <NavigationContainer>
+        {/*
+          StatusBar configuration
+          - 'auto': Automatically adjusts based on app theme
+          - Ensures consistent status bar appearance across platforms
+        */}
+        <StatusBar style="auto" />
 
-      {/*
-        Stack Navigator Container
-        - initialRouteName: Sets "Home" as the starting screen
-        - Defines linear navigation flow suitable for game setup process
-      */}
-      <Stack.Navigator initialRouteName="Home">
+        {/*
+          Stack Navigator Container
+          - initialRouteName: Sets "Home" as the starting screen
+          - Defines linear navigation flow suitable for game setup process
+        */}
+        <Stack.Navigator initialRouteName="Home">
 
         {/*
           HOME SCREEN
@@ -121,7 +123,8 @@ export default function App() {
           }}
         />
 
-      </Stack.Navigator>
-    </NavigationContainer>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

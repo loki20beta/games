@@ -263,6 +263,33 @@ export default function HomeScreen({ navigation }) {
     stopFlashAnimation();          // Prevent animation memory leaks
   };
 
+  /**
+   * handleTestGame: Navigate directly to GameScreen with predefined emoji set
+   * @param {string} gridSize - Grid size for the test game ('2x2', '4x4', '6x6')
+   * 
+   * Creates a predefined set of emojis based on grid size and navigates
+   * directly to GameScreen, skipping the SelectionScreen for testing purposes.
+   */
+  const handleTestGame = (gridSize) => {
+    // Predefined emoji sets for each grid size
+    const testEmojis = {
+      '2x2': ['😀', '🎈'], // 2 emojis for 2x2 (2 pairs)
+      '4x4': ['😀', '🎈', '🌟', '🎂', '🎁', '🎪', '🎨', '🎯'], // 8 emojis for 4x4 (8 pairs)
+      '6x6': ['😀', '🎈', '🌟', '🎂', '🎁', '🎪', '🎨', '🎯', '🚀', '🎸', '🎭', '🎪', '🎨', '🎯', '🎲', '🎳', '🎸', '🎭'] // 18 emojis for 6x6 (18 pairs)
+    };
+
+    const gridConfig = gridOptions.find(option => option.value === gridSize);
+    const selectedImages = testEmojis[gridSize] || testEmojis['2x2'];
+
+    // Navigate directly to GameScreen with test data
+    navigation.navigate('Game', {
+      gridSize: gridSize,
+      imageSource: 'emoji',
+      selectedImages: selectedImages,
+      totalCards: gridConfig.totalCards
+    });
+  };
+
   // === VISUAL COMPONENT RENDERERS ===
 
   /**
@@ -376,6 +403,31 @@ export default function HomeScreen({ navigation }) {
               isLandscape && styles.gridOptionsLandscape
             ]}>
               {gridOptions.map(renderGridOption)}
+            </View>
+
+            {/* TEMPORARY TEST BUTTONS - For direct GameScreen testing */}
+            <View style={styles.testButtonsContainer}>
+              <Text style={styles.testButtonsLabel}>Test Game (Skip Selection):</Text>
+              <View style={styles.testButtonsRow}>
+                <TouchableOpacity 
+                  style={styles.testButton} 
+                  onPress={() => handleTestGame('2x2')}
+                >
+                  <Text style={styles.testButtonText}>Test 2x2</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.testButton} 
+                  onPress={() => handleTestGame('4x4')}
+                >
+                  <Text style={styles.testButtonText}>Test 4x4</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.testButton} 
+                  onPress={() => handleTestGame('6x6')}
+                >
+                  <Text style={styles.testButtonText}>Test 6x6</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}
@@ -773,5 +825,59 @@ const styles = StyleSheet.create({
    */
   nextButtonTextDisabled: {
     color: '#adb5bd',
+  },
+
+  // === TEST BUTTONS STYLING ===
+
+  /**
+   * testButtonsContainer: Container for test buttons section
+   */
+  testButtonsContainer: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+
+  /**
+   * testButtonsLabel: Label text for test buttons
+   */
+  testButtonsLabel: {
+    fontSize: 14,
+    color: '#6c757d',
+    marginBottom: 10,
+    fontWeight: 'bold',
+  },
+
+  /**
+   * testButtonsRow: Horizontal container for test buttons
+   */
+  testButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+  },
+
+  /**
+   * testButton: Individual test button styling
+   */
+  testButton: {
+    backgroundColor: '#ff9800',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+
+  /**
+   * testButtonText: Text styling for test buttons
+   */
+  testButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

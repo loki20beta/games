@@ -31,7 +31,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BuildInfo from '../components/BuildInfo';
 import Card from '../components/Card';
 
@@ -197,12 +198,12 @@ export default function GameScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       {/* Game Board */}
       <View style={styles.gameBoard}>
         <View style={[styles.gameGrid, {
-          width: cardDimensions.gridWidth,
-          height: cardDimensions.gridHeight
+          width: Math.min(cardDimensions.gridWidth, screenDimensions.width - 40),
+          height: Math.min(cardDimensions.gridHeight, screenDimensions.height - 200)
         }]}>
           {gameCards.map((card, index) => (
             <View
@@ -293,7 +294,7 @@ function createGameCards(selectedImages, totalCards) {
 
 /**
  * Calculate responsive card dimensions based on screen size and grid configuration
- * Cards will always occupy the whole available space, forming a square grid when possible
+ * Ensures proper grid formation and respects safe areas
  * @param {Object} screenDimensions - Screen width and height
  * @param {Object} gridConfig - Grid configuration (rows, columns)
  * @returns {Object} Card sizing and spacing information
@@ -302,31 +303,41 @@ function calculateCardDimensions(screenDimensions, gridConfig) {
   const { width: screenWidth, height: screenHeight } = screenDimensions;
   const { rows, columns } = gridConfig;
 
-  // Reserve space for build info and padding
+  // Conservative safe area calculations
+  const statusBarHeight = 50;
+  const navigationHeaderHeight = 100;
   const buildInfoHeight = 40;
-  const verticalPadding = 20; // Reduced padding for more space
-
-  const availableWidth = screenWidth - 20; // 10px padding on each side
-  const availableHeight = screenHeight - buildInfoHeight - verticalPadding;
-
-  // Calculate optimal card dimensions to fill the entire available space
-  // Use minimal margin between cards (2px) to maximize card size
-  const margin = 2;
+  const safeAreaPadding = 40; // Extra padding for safe areas
   
-  // Calculate card dimensions that fill the entire available space
-  const cardWidth = (availableWidth - (columns - 1) * margin) / columns;
-  const cardHeight = (availableHeight - (rows - 1) * margin) / rows;
+  // Calculate available space with generous margins
+  const availableWidth = screenWidth - (safeAreaPadding * 2);
+  const availableHeight = screenHeight - statusBarHeight - navigationHeaderHeight - buildInfoHeight - safeAreaPadding;
 
-  // Calculate actual grid dimensions (should fill available space)
-  const gridWidth = availableWidth;
-  const gridHeight = availableHeight;
+  // Calculate card dimensions that maintain proper aspect ratio
+  const margin = 4; // Slightly larger margin for better spacing
+  
+  // Calculate maximum possible card dimensions
+  const maxCardWidth = (availableWidth - (columns - 1) * margin) / columns;
+  const maxCardHeight = (availableHeight - (rows - 1) * margin) / rows;
+  
+  // Use the smaller dimension to ensure cards fit in both directions
+  // This prevents cards from being cut off or overlapping safe areas
+  const cardSize = Math.min(maxCardWidth, maxCardHeight);
+  
+  // Ensure minimum viable card size
+  const minCardSize = 40;
+  const finalCardSize = Math.max(cardSize, minCardSize);
+  
+  // Calculate actual grid dimensions based on final card size
+  const gridWidth = (finalCardSize * columns) + (margin * (columns - 1));
+  const gridHeight = (finalCardSize * rows) + (margin * (rows - 1));
 
   return {
-    cardWidth: Math.floor(cardWidth),
-    cardHeight: Math.floor(cardHeight),
+    cardWidth: Math.floor(finalCardSize),
+    cardHeight: Math.floor(finalCardSize), // Keep cards square for consistency
     margin,
-    gridWidth,
-    gridHeight,
+    gridWidth: Math.floor(gridWidth),
+    gridHeight: Math.floor(gridHeight),
   };
 }
 
@@ -350,6 +361,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingTop: 20,
+    paddingBottom: 20,
+    overflow: 'hidden', // Prevent overflow
   },
 
   /**
@@ -360,6 +375,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+    alignContent: 'center',
+    maxWidth: '100%',
+    maxHeight: '100%',
   },
 
   /**
